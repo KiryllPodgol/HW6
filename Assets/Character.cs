@@ -17,7 +17,8 @@ public class Character : MonoBehaviour
     private float gravity = -9.81f;
     private bool isJumping = false;
     private bool isDead = false;
-    private bool isSpawning = false;
+    private float currentHitValue = 0.0f;
+
     private bool StartMove = false;
 
 
@@ -37,14 +38,29 @@ public class Character : MonoBehaviour
         get { return animator = animator ?? GetComponent<Animator>(); }
     }
 
-    private void Start()
+
+     void Start()
     {
         CharacterAnimator.SetTrigger("Spawn");
-        isSpawning = true;
-       
+        
+      
 
-
+        Invoke("EnableMovement", 2.0f);
     }
+
+    private void Respawn()
+    {
+        isDead = false;
+        CharacterAnimator.SetTrigger("Spawn");
+        
+    }
+    private void EnableMovement()
+    {
+        StartMove = true;
+        CharacterAnimator.SetTrigger("StartMove");
+    }
+
+    [System.Obsolete]
     void Update()
     {
         if (!StartMove) return;
@@ -74,18 +90,27 @@ public class Character : MonoBehaviour
             }
         }
 
-        if (Input.GetKeyDown(KeyCode.E) && isDead)
+        if (Input.GetKeyDown(KeyCode.E) && !isDead)
         {
             CharacterAnimator.SetTrigger("Death");
-          
             isDead = true;
-        }
-        else
-        {
-            isDead = false;
-      
+
         }
 
+        if (isDead)
+        {
+            CharacterAnimator.SetTrigger("Spawn");
+
+        }
+
+        //лкм
+
+        if (Input.GetMouseButtonDown(0))
+        {
+            currentHitValue = Random.Range(0, 3) * 0.5f;
+            CharacterAnimator.SetFloat("currentHitValue", currentHitValue);
+            CharacterAnimator.SetTrigger("RandomHit"); 
+        }
         // Обновление вертикальной скорости анимации
         CharacterAnimator.SetFloat("SpeedY", speedY / jumpSpeed);
 
