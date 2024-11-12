@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class Character : MonoBehaviour
@@ -7,18 +8,20 @@ public class Character : MonoBehaviour
     public float rotationSpeed = 0.2f;
     public float animationBlendSpeed = 0.2f;
     public float jumpSpeed = 7.0f;
+    public LayerMask Ground;
     private CharacterController controller;
     private Camera characterCamera;
     private Animator animator;
     private float rotationAngle = 0.0f;
     private float targetAnimationSpeed = 0.0f;
-    private bool isSprint = false;
     private float speedY = 0.0f;
     private float gravity = -9.81f;
-    private bool isJumping = false;
-    private bool isDead = false;
     private float currentHitValue = 0.0f;
+    private float respawnDelay = 2.1f;
 
+    private bool isSprint = false;
+    private bool isDead = false;
+    private bool isJumping = false;
     private bool StartMove = false;
 
 
@@ -27,10 +30,10 @@ public class Character : MonoBehaviour
         get { return controller = controller ?? GetComponent<CharacterController>(); }
     }
 
-    [System.Obsolete]
+
     public Camera CharacterCamera
     {
-        get { return characterCamera = characterCamera ?? FindObjectOfType<Camera>(); }
+        get { return characterCamera = characterCamera ?? Camera.main; }
     }
 
     public Animator CharacterAnimator
@@ -39,37 +42,31 @@ public class Character : MonoBehaviour
     }
 
 
-     void Start()
+    private void Start()
     {
-        //CharacterAnimator.SetTrigger("Spawn");
-
-        spawns();
-
-        //Invoke("EnableMovement", 2.0f);
+        Respawn();
     }
 
-    private void spawns()
-    {
-        CharacterAnimator.SetTrigger("Spawn");
-
-
-
-        Invoke("EnableMovement", 2.0f);
-    }
     private void Respawn()
     {
-        
         CharacterAnimator.SetTrigger("Spawn");
         isDead = false;
-        Invoke("EnableMovement", 2.0f);
+        StartMove = false;
+        StartCoroutine(EnableMovementAfterDelay());
     }
+
+    private IEnumerator EnableMovementAfterDelay()
+    {
+        yield return new WaitForSeconds(respawnDelay);
+        EnableMovement();
+    }
+
     private void EnableMovement()
     {
         StartMove = true;
         CharacterAnimator.SetTrigger("StartMove");
     }
 
-    [System.Obsolete]
     void Update()
     {
         if (!StartMove) return;
@@ -97,7 +94,7 @@ public class Character : MonoBehaviour
         if (isJumping && speedY < 0.0f)
         {
             RaycastHit hit;
-            if (Physics.Raycast(transform.position, Vector3.down, out hit, 1f, LayerMask.GetMask("Default")))
+            if (Physics.Raycast(transform.position, Vector3.down, out hit, 1f, Ground))
             {
                 isJumping= false;
                 CharacterAnimator.SetTrigger("Land");
@@ -108,20 +105,21 @@ public class Character : MonoBehaviour
             CharacterAnimator.SetTrigger("Death");
             isDead = true;
             StartMove = false;
+         
         }
         if (isDead)
         {
 
-            Invoke("Respawn", 2.0f);
+            Respawn();
         }
 
         //лкм
 
         if (Input.GetMouseButtonDown(0))
         {
-            currentHitValue = Random.Range(0, 3) * 0.5f;
+            currentHitValue = Random.Range(1, 4); // Генерирует случайное число 1, 2 или 3
             CharacterAnimator.SetFloat("currentHitValue", currentHitValue);
-            CharacterAnimator.SetTrigger("RandomHit"); 
+            CharacterAnimator.SetTrigger("RandomHit");
         }
 
         // Спринт
